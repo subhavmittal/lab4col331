@@ -16,7 +16,6 @@
 #endif
 
 #define NINODES 200
-#define NSWAPBLOCKS 64 // Number of blocks for the swap partition
 
 // Disk layout:
 // [ boot block | sb block | log | inode blocks | free bit map | data blocks ]
