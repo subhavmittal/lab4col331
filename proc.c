@@ -130,6 +130,8 @@ userinit(void)
     panic("userinit: out of memory?");
   inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
   p->sz = PGSIZE;
+  // update the rss of the process
+  p->rss = PGSIZE;
   memset(p->tf, 0, sizeof(*p->tf));
   p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
   p->tf->ds = (SEG_UDATA << 3) | DPL_USER;
@@ -170,6 +172,8 @@ growproc(int n)
       return -1;
   }
   curproc->sz = sz;
+  // update the rss of the process
+  curproc->rss = curproc->rss + n;
   switchuvm(curproc);
   return 0;
 }
@@ -197,6 +201,8 @@ fork(void)
     return -1;
   }
   np->sz = curproc->sz;
+  // update the rss of the process
+  np->rss = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
@@ -294,6 +300,8 @@ wait(void)
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
+        // update the rss of the process
+        p->rss = 0;
         p->state = UNUSED;
         release(&ptable.lock);
         return pid;

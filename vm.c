@@ -274,6 +274,11 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       kfree(v);
       *pte = 0;
     }
+    //increment rss  of current process if page is swapped out
+    else if((*pte & PTE_PG) != 0){
+      struct proc *curproc = myproc();
+      curproc->rss++;
+    }
   }
   return newsz;
 }
