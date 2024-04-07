@@ -86,6 +86,7 @@ swap_in(uint va)
     for (int i = 0; i < 8; i++) {
         b = bread(ROOTDEV, (snum*8)+i+SWAPSTART);
         memmove(mem+(i*512), b->data, 512);
+        brelse(b);
     }
     *pte = v2p(mem) | PTE_FLAGS(*pte);
     s.is_free = 1;
