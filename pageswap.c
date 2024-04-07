@@ -62,3 +62,33 @@ int swap_out(){
     }
     return -1;
 }
+
+void
+swap_in(uint va)
+{
+    // Implement the swapping-in procedure
+    struct proc *curproc = myproc();
+    pte_t *pte = walkpgdir(curproc->pgdir, (void *)va, 0);
+
+    if (!pte || !(*pte & PTE_PG)) {
+        return;
+    }
+
+    int snum = PTE_ADDR(*pte) >> 12;
+    struct slot s = diskslots[snum];
+
+    if (s.is_free) {
+        return;
+    }
+
+    char *mem = kalloc();
+    struct buf *b;
+    for (int i = 0; i < 8; i++) {
+        b = bread(ROOTDEV, (snum*8)+i+SWAPSTART);
+        memmove(mem+(i*512), b->data, 512);
+    }
+    *pte = v2p(mem) | PTE_FLAGS(*pte);
+    s.is_free = 1;
+    lcr3(v2p(curproc->pgdir));
+    return;
+}
