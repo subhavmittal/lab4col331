@@ -555,3 +555,31 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+// added function to get the victim process
+struct proc*
+find_victim_proc(void)
+{
+  struct proc *p, *victim = 0;
+  int max_rss = 0;
+
+  acquire(&ptable.lock);
+
+  // Find the process with the maximum resident set size (rss)
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->state != UNUSED && p->state != ZOMBIE && p->rss > max_rss) {
+      max_rss = p->rss;
+      victim = p;
+    }
+  }
+
+  // If multiple processes have the same rss, choose the one with the lower pid
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->state != UNUSED && p->state != ZOMBIE && p->rss == max_rss && p->pid < victim->pid) {
+      victim = p;
+    }
+  }
+
+  release(&ptable.lock);
+  return victim;
+}

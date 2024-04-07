@@ -94,7 +94,7 @@ struct segdesc {
 #define PTE_P           0x001   // Present
 #define PTE_W           0x002   // Writeable
 #define PTE_U           0x004   // User
-
+#define PTE_PG          0x200   // page swapped out to disk
 #define PTE_A           0x020   // Accessed
 #define PTE_PS          0x080   // Page Size
 

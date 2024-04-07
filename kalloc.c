@@ -52,8 +52,8 @@ freerange(void *vstart, void *vend)
   for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
   {
     kfree(p);
-    kmem.num_free_pages+=1;
-  }
+    // kmem.num_free_pages+=1;
+  } 
     
 }
 //PAGEBREAK: 21
@@ -98,6 +98,12 @@ kalloc(void)
     kmem.freelist = r->next;
     kmem.num_free_pages-=1;
   }
+  else{
+    swap_out();
+    r = kmem.freelist;
+  }
+  if(r==0)
+    cprintf("kalloc: no free pages\n");
   if(kmem.use_lock)
     release(&kmem.lock);
   return (char*)r;
