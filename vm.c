@@ -274,6 +274,11 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       kfree(v);
       *pte = 0;
     }
+    //increment rss  of current process if page is swapped out
+    else if((*pte & PTE_PG) != 0){
+      struct proc *curproc = myproc();
+      curproc->rss++;
+    }
   }
   return newsz;
 }
@@ -392,3 +397,41 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 //PAGEBREAK!
 // Blank page.
 
+// function to find victim page
+pte_t *
+findvictimpage(pde_t *pgdir, uint sz)
+{
+  pte_t *pte;
+  void *va;
+  int pages_to_reset = sz / PGSIZE / 10; // 10% of total pages
+
+  // First iteration: Try to find an unaccessed page
+  for(va = 0; va < (void*)sz; va += PGSIZE){
+    if((pte = walkpgdir(pgdir, va, 0)) == 0)
+      panic("findvictimpage: pte should exist");
+    if((*pte & PTE_P) && !(*pte & PTE_A)){
+      return pte;
+    }
+  }
+
+  // Reset 10% of pages by clearing the access bit
+  for(va = 0; va < (void*)sz && pages_to_reset > 0; va += PGSIZE){
+    if((pte = walkpgdir(pgdir, va, 0)) == 0)
+      continue;
+    if(*pte & PTE_A){
+      *pte &= ~PTE_A; // clear access bit
+      pages_to_reset--;
+    }
+  }
+
+  // Second iteration: Try to find an unaccessed page
+  for(va = 0; va < (void*)sz; va += PGSIZE){
+    if((pte = walkpgdir(pgdir, va, 0)) == 0)
+      panic("findvictimpage: pte should exist");
+    if((*pte & PTE_P) && !(*pte & PTE_A)){
+      return pte;
+    }
+  }
+
+  return 0; // no victim page found
+}

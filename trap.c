@@ -9,7 +9,12 @@
 #include "spinlock.h"
 
 // Interrupt descriptor table (shared by all CPUs).
-struct gatedesc idt[256];
+
+struct gatedesc idt[256]; //ach gatedesc structure represents an interrupt gate or a trap gate.
+// idt: Interrupt descriptor table, which holds the descriptors for various interrupt and trap handlers.
+// vectors[]: Array of 256 entry pointers to the actual interrupt and trap handlers.
+// tickslock: A spinlock to protect the ticks variable.
+// ticks: A counter that keeps track of the number of clock ticks.
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
@@ -20,7 +25,7 @@ tvinit(void)
   int i;
 
   for(i = 0; i < 256; i++)
-    SETGATE(idt[i], 0, SEG_KCODE<<3, vectors[i], 0);
+  SETGATE(idt[i], 0, SEG_KCODE<<3, vectors[i], 0); //#define SETGATE(gate, istrap, sel, off, dpl(descriptor privillege level)) 
   SETGATE(idt[T_SYSCALL], 1, SEG_KCODE<<3, vectors[T_SYSCALL], DPL_USER);
 
   initlock(&tickslock, "time");
@@ -67,6 +72,9 @@ trap(struct trapframe *tf)
     kbdintr();
     lapiceoi();
     break;
+  case T_PGFLT:
+        swap_in(rcr2());
+        break;
   case T_IRQ0 + IRQ_COM1:
     uartintr();
     lapiceoi();

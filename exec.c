@@ -101,6 +101,8 @@ exec(char *path, char **argv)
   curproc->tf->esp = sp;
   switchuvm(curproc);
   freevm(oldpgdir);
+  // update the rss of the process
+  curproc->rss = sz;
   return 0;
 
  bad:

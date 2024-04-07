@@ -20,10 +20,10 @@
 // Disk layout:
 // [ boot block | sb block | log | inode blocks | free bit map | data blocks ]
 
-int nbitmap = FSSIZE/(BSIZE*8) + 1;
-int ninodeblocks = NINODES / IPB + 1;
 int nlog = LOGSIZE;
-int nmeta;    // Number of meta blocks (boot, sb, nlog, inode, bitmap)
+int ninodeblocks = NINODES / IPB + 1;
+int nbitmap = FSSIZE/(BSIZE*8) + 1;
+int nmeta;    // Number of meta blocks (boot, sb, nlog, inode, bitmap, swapblocks)
 int nblocks;  // Number of data blocks
 
 int fsfd;
@@ -34,6 +34,7 @@ uint freeblock;
 
 
 void balloc(int);
+void initswaparea(void);
 void wsect(uint, void*);
 void winode(uint, struct dinode*);
 void rinode(uint inum, struct dinode *ip);
@@ -90,17 +91,16 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  // 1 fs block = 1 disk sector
-  nmeta = 2 + nlog + ninodeblocks + nbitmap;
+  nmeta = 2 + nlog + ninodeblocks + nbitmap + NSWAPBLOCKS;
   nblocks = FSSIZE - nmeta;
 
   sb.size = xint(FSSIZE);
   sb.nblocks = xint(nblocks);
   sb.ninodes = xint(NINODES);
   sb.nlog = xint(nlog);
-  sb.logstart = xint(2);
-  sb.inodestart = xint(2+nlog);
-  sb.bmapstart = xint(2+nlog+ninodeblocks);
+  sb.logstart = xint(2 + NSWAPBLOCKS); // Update logstart to account for swap partition
+  sb.inodestart = xint(2 + nlog + NSWAPBLOCKS);
+  sb.bmapstart = xint(2 + nlog + NSWAPBLOCKS + ninodeblocks);
 
   printf("nmeta %d (boot, super, log blocks %u inode blocks %u, bitmap blocks %u) blocks %d total %d\n",
          nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
@@ -113,6 +113,9 @@ main(int argc, char *argv[])
   memset(buf, 0, sizeof(buf));
   memmove(buf, &sb, sizeof(sb));
   wsect(1, buf);
+
+  // Initialize swap area
+  initswaparea();
 
   rootino = ialloc(T_DIR);
   assert(rootino == ROOTINO);
@@ -294,4 +297,13 @@ iappend(uint inum, void *xp, int n)
   }
   din.size = xint(off);
   winode(inum, &din);
+}
+
+void initswaparea(void)
+{
+  int i;
+  char buf[BSIZE];
+  bzero(buf, BSIZE);
+  for(i = 0; i < NSWAPBLOCKS; i++)
+    wsect(2 + i, buf);
 }
