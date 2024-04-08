@@ -190,6 +190,7 @@ fork(void)
 
   // Allocate process.
   if((np = allocproc()) == 0){
+    // cprintf("allocproc failed\n");
     return -1;
   }
 
@@ -390,7 +391,6 @@ sched(void)
 {
   int intena;
   struct proc *p = myproc();
-
   if(!holding(&ptable.lock))
     panic("sched ptable.lock");
   if(mycpu()->ncli != 1)
@@ -461,8 +461,9 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
-
+  // cprintf("1f\n");
   sched();
+  // cprintf("2f\n");
 
   // Tidy up.
   p->chan = 0;

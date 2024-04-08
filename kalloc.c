@@ -65,7 +65,7 @@ void
 kfree(char *v)
 {
   struct run *r;
-
+  // cprintf("%d %d freepg\n",v,V2P(v));
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
@@ -97,15 +97,26 @@ kalloc(void)
   {
     kmem.freelist = r->next;
     kmem.num_free_pages-=1;
-  }
-  else{
-    swap_out();
-    r = kmem.freelist;
-  }
-  if(r==0)
-    cprintf("kalloc: no free pages\n");
-  if(kmem.use_lock)
+    if(kmem.use_lock)
     release(&kmem.lock);
+  }
+
+  else{
+    // cprintf("1f\n");
+    char* temp;
+    if(kmem.use_lock)
+    release(&kmem.lock);
+    // cprintf("kalloc call hua\n");
+    temp = swap_out();
+    // cprintf("out of swap\n");
+    // cprintf("in swap\n");
+    // cprintf("temp %d\n",temp);
+    kfree(temp);
+    
+    // cprintf("2f\n");
+    // r = kmem.freelist;
+    return kalloc();
+  }
   return (char*)r;
 }
 uint 

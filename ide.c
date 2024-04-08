@@ -157,12 +157,10 @@ iderw(struct buf *b)
   // Start disk if necessary.
   if(idequeue == b)
     idestart(b);
-
   // Wait for request to finish.
   while((b->flags & (B_VALID|B_DIRTY)) != B_VALID){
     sleep(b, &idelock);
   }
-
 
   release(&idelock);
 }

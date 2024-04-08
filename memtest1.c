@@ -13,6 +13,7 @@
 void
 mem(void)
 {
+	
 	void *m1 = 0, *m2, *start;
 	int upt1 = uptime();
 	uint cur = 0;
@@ -27,7 +28,6 @@ mem(void)
 	// ((int*)m1)[4096] = 1;
 	// goto failed;
 	start = m1;
-
 	while (cur < TOTAL_MEMORY) {
 		m2 = malloc(4096);
 		if (m2 == 0)
@@ -46,7 +46,6 @@ mem(void)
 
 	count = 0;
 	m1 = start;
-
 	while (count != total_count) {
 		if (((int*)m1)[2] != count)
 		{

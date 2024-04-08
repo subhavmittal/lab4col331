@@ -277,7 +277,9 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     //increment rss  of current process if page is swapped out
     else if((*pte & PTE_PG) != 0){
       struct proc *curproc = myproc();
-      curproc->rss++;
+      curproc->rss = curproc->rss + PGSIZE;
+      // get slot number
+      free_slot(PTE_ADDR(*pte) >> 12);
     }
   }
   return newsz;
@@ -399,7 +401,7 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 
 // function to find victim page
 pte_t *
-findvictimpage(pde_t *pgdir, uint sz)
+find_victim_page(pde_t *pgdir, uint sz)
 {
   pte_t *pte;
   void *va;
@@ -433,5 +435,5 @@ findvictimpage(pde_t *pgdir, uint sz)
     }
   }
 
-  return 0; // no victim page found
+  return (pte_t*)0; // no victim page found
 }

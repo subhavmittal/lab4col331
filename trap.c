@@ -74,6 +74,7 @@ trap(struct trapframe *tf)
     break;
   case T_PGFLT:
         swap_in(rcr2());
+        lapiceoi();
         break;
   case T_IRQ0 + IRQ_COM1:
     uartintr();
