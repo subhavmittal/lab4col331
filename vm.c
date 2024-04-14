@@ -332,8 +332,12 @@ copyuvm(pde_t *pgdir, uint sz)
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
+    if(!(*pte & PTE_P) && !(*pte & PTE_PG))
       panic("copyuvm: page not present");
+    if((*pte & PTE_PG) && !(*pte & PTE_P)){
+      // swap in the page
+      swap_in(i);
+    }
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
@@ -359,10 +363,15 @@ uva2ka(pde_t *pgdir, char *uva)
   pte_t *pte;
 
   pte = walkpgdir(pgdir, uva, 0);
-  if((*pte & PTE_P) == 0)
+  if(!(*pte & PTE_P) && !(*pte & PTE_PG))
     return 0;
   if((*pte & PTE_U) == 0)
     return 0;
+
+  if((*pte & PTE_PG) && !(*pte & PTE_P)){
+    // swap in the page
+    swap_in((uint)uva);
+  }
   return (char*)P2V(PTE_ADDR(*pte));
 }
 
